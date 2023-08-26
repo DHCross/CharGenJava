@@ -1,0 +1,214 @@
+ <!DOCTYPE html>
+<html>
+<head>
+    <title>Character Generator</title>
+</head>
+<body>
+    <h1>Character Generator</h1>
+    <button onclick="displayCharacter()">Generate Character</button>
+    <div id="characterOutput"></div>
+
+    <script>
+        // Define races, classes, and other attributes
+        const races = {
+             "Dwarf": {
+                "base_die_ranks": {"Fortitude": "d4", "Endurance": "d4", "Prowess": "d6", "Melee": "d6"},
+                "advantages": ["Night Vision", "Strong-willed", "Sense of Direction"]
+            },
+            "Elf": {
+                "base_die_ranks": {"Competence": "d6", "Wizardry": "+1", "Prowess": "d4", "Agility": "d4", "Reaction": "+1"},
+                "advantages": ["Night Vision", "Gift of Magic", "Magic Resistance (+1)"]
+            },
+            "Gnome": {
+                "base_die_ranks": {"Competence": "d6", "Adroitness": "d6", "Perception": "d4", "Perspicacity": "+1"},
+                "advantages": ["Eidetic Memory", "Low-Light Vision", "Observant"],
+                "flaw": "Restriction: small weapons only"
+            },
+            "Half-Elf": {
+                "base_die_ranks": {"Competence": "d6", "Agility": "d4", "Reaction": "+1", "Endurance": "d4", "Willpower": "d4"},
+                "advantages": ["Heightened Senses", "Low-Light Vision", "Magic Resistance (+1)"]
+            },
+            "Half-Orc": {
+                "base_die_ranks": {"Fortitude": "d8", "Endurance": "d6", "Strength": "d8", "Ferocity": "+1"},
+                "advantages": ["Lowlight Vision", "Intimidation", "Menacing"],
+                "flaw": "Ugliness"
+            },
+            "Human": {
+                "base_die_ranks": {"Competence": "d6", "Threat": "+1", "Prowess": "d4", "Melee": "d4", "Willpower": "d6"},
+                "advantages": ["Fortunate", "Survival"]
+            }
+        };
+
+        const classes = {
+              "Adept (Wizardry)": {
+                "base_die_ranks": {"Competence": "d6", "Expertise": "d6", "Wizardry": "+1", "Perception": "d4", "Perspicacity": "+1"},
+                "advantages": ["Arcanum", "Gift of Magic", "Literacy", "Scholar"],
+                "feats": ["Guile", "Lore", "Magical Artifice", "Quick-witted"]
+            },
+            "Rogue (Skullduggery)": {
+                "base_die_ranks": {"Competence": "d4", "Skulduggery": "+1", "Perception": "d4", "Prowess": "d8", "Agility": "d8"},
+                "advantages": ["Expeditious", "Fortunate", "Streetwise", "Underworld Contacts"],
+                "feats": ["Backstab", "Evasion", "Roguish Charm", "Stealth"]
+            },
+            "Theurgist (Theurgy)": {
+                "base_die_ranks": {"Competence": "d8", "Expertise": "d4", "Theurgy": "+1", "Fortitude": "d6", "Willpower": "d4"},
+                "advantages": ["Gift of Magic", "Magic Defense", "Religion", "Strong-Willed"],
+                "feats": ["Divine Healing", "Path Mastery (Druidry or Hereticism)", "Spiritual Smite", "Supernatural Intervention"]
+            },
+             "Warrior (Warcraft)": {
+                "base_die_ranks": {"Prowess": "d8", "Melee": "d6", "Threat": "+1", "Fortitude": "d6"},
+                "advantages": ["Commanding", "Intimidation"]
+            },
+            "Assassin (Skullduggery)": {
+                "base_die_ranks": {"Competence": "d4", "Adroitness": "d6", "Perception": "d4", "Agility": "d4", "Vitality": "d6"},
+                "focuses": {"Finesse +1 or Ranged Finesse +1": "d4"},
+                "advantages": ["Expeditious", "Heightened Senses (hearing)", "Observant", "Read Emotions"],
+                "feats": ["Death Strike", "Lethal Exploit", "Ranged Ambush", "Shadow Walk"]
+            },
+            "Mage": {
+                "base_die_ranks": {
+                    "Competence": "d6",
+                    "Expertise": "d8",
+                    "Wizardry": "+1",
+                    "Fortitude": "d4",
+                    "Willpower": "d6",
+                    "Resistance": "+1"
+                },
+                "advantages": ["Arcanum", "Gift of Magic", "Magic Defense", "Scholar"],
+                "feats": ["Arcane Finesse", "Dweomers", "Intangible Threat", "Path Mastery (Thaumaturgy, Elementalism, or Sorcery)"]
+            },
+            "Mystic": {
+                "base_die_ranks": {
+                    "Competence": "d6",
+                    "Expertise": "d6",
+                    "Wizardry": "+1",
+                    "Prowess": "d4",
+                    "Melee": "d4",
+                    "Fortitude": "d4",
+                    "Endurance": "d6",
+                    "Resilience": "+1",
+                    "Vitality": "+2"
+                },
+                "advantages": ["Empathic", "Gift of Magic", "Intuitive", "Magic Resistance (Lesser)", "Strong-Willed"],
+                "feats": ["Iron Mind", "Path Mastery (Mysticism)", "Premonition", "Psychic Powers"]
+            },
+            "Barbarian": {
+                "base_die_ranks": {
+                    "Prowess": "d6",
+                    "Melee": "d8",
+                    "Fortitude": "d4",
+                    "Strength": "d4",
+                    "Ferocity": "+1"
+                },
+                "advantages": ["Animal Affinity", "Brutishness", "Menacing", "Resilient"],
+                "feats": ["Berserk", "Brawl", "Feat of Strength", "Grapple"]
+            }
+        };
+		
+		 const cpCosts = {
+            "d4": 4,
+            "d6": 6,
+            "d8": 8,
+            "d10": 10,
+            "d12": 12
+        };
+
+        const focusCpCosts = {
+            1: 4,
+            2: 8,
+            3: 12,
+            4: 16,
+            5: 20
+        };
+
+        function calculateMaxValue(dieRank) {
+            const maxValueMapping = {"d4": 4, "d6": 6, "d8": 8, "d10": 10, "d12": 12};
+            return maxValueMapping[dieRank] || 0;
+        }
+
+         function allocateCharacterPoints(character, cps) {
+            let remainingCps = cps;
+            for (const attribute in character.base_die_ranks) {
+                while (remainingCps > 0) {
+                    const nextRank = `d${calculateMaxValue(character.base_die_ranks[attribute]) + 2}`;
+                    character.base_die_ranks[attribute] = nextRank;
+                    remainingCps--;
+                }
+            }
+        }
+
+        function formatCharacterOutput(character) {
+            const coreAbilities = ["Competence", "Prowess", "Fortitude"];
+            const specializations = {
+                "Competence": ["Adroitness", "Expertise", "Perception"],
+                "Prowess": ["Agility", "Melee"],
+                "Fortitude": ["Endurance"]
+            };
+            const focusAreas = {
+                "Adroitness": ["Skulduggery", "Cleverness"],
+                "Expertise": ["Wizardry", "Theurgy"],
+                "Perception": ["Alertness", "Perspicacity"],
+                "Agility": ["Speed", "Reaction"],
+                "Melee": ["Threat", "Finesse", "Ranged"],
+                "Endurance": []
+            };
+
+            let output = [];
+
+            coreAbilities.forEach(coreAbility => {
+                let coreOutput = `${coreAbility} ${character.base_die_ranks[coreAbility] || 'd4'} → `;
+                let specializationsOutput = [];
+
+                specializations[coreAbility].forEach(specialization => {
+                    let specializationOutput = `${specialization} ${character.base_die_ranks[specialization] || 'd4'} → `;
+                    let focusOutput = [];
+
+                    focusAreas[specialization].forEach(focusArea => {
+                        let focusValue = character.base_die_ranks[focusArea] || "+0";
+                        focusOutput.push(`${focusArea} (${focusValue})`);
+                    });
+
+                    specializationsOutput.push(specializationOutput + focusOutput.join(", "));
+                });
+
+                output.push(coreOutput + specializationsOutput.join(". "));
+            });
+
+            const activeDefensePool = calculateMaxValue(character.base_die_ranks["Prowess"]) +
+                                      calculateMaxValue(character.base_die_ranks["Agility"]) +
+                                      calculateMaxValue(character.base_die_ranks["Melee"]);
+            const passiveDefensePool = calculateMaxValue(character.base_die_ranks["Fortitude"]) +
+                                       calculateMaxValue(character.base_die_ranks["Endurance"]) +
+                                       calculateMaxValue(character.base_die_ranks["Strength"]);
+            const spiritPoints = calculateMaxValue(character.base_die_ranks["Competence"]) +
+                                 calculateMaxValue(character.base_die_ranks["Willpower"]);
+
+            output.push(`Active Defense HP Pool = ${activeDefensePool}`);
+            output.push(`Passive Defense HP Pool = ${passiveDefensePool}`);
+            output.push(`Spirit Points = ${spiritPoints}`);
+
+            return output.join(". ");
+        }
+
+        function generateCharacter(level, race, className) {
+            const character = {
+                race: race,
+                className: className,
+                base_die_ranks: {...races[race].base_die_ranks, ...classes[className].base_die_ranks},
+                advantages: [...races[race].advantages, ...classes[className].advantages],
+                feats: classes[className].feats,
+                level: level
+            };
+            
+            allocateCharacterPoints(character, 10);  // Allocate 10 character points for demonstration
+            return formatCharacterOutput(character);
+        }
+
+        function displayCharacter() {
+            const generatedCharacter = generateCharacter(1, 'Elf', 'Adept');
+            const characterOutput = document.getElementById('characterOutput');
+            characterOutput.innerHTML = generatedCharacter;
+        }
+    </script>
+</body>
+</html>
